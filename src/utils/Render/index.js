@@ -35,9 +35,9 @@ export default {
     } else {
       this.rendererFactory(streamList, mode, mainId);
     }
-    for (let stream of streamList) {
-      stream.player && stream.player.resize();
-    }
+    // for (let stream of streamList) {
+    //   stream.player && stream.player.resize();
+    // }
   },
 
   rendererFactory(streamList, mode, mainId) {

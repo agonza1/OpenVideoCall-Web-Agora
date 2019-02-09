@@ -58,6 +58,6 @@
     "webpack-dev-server": "^2.9.1"
   },
   "name": "agora_videocall",
-  "description": "Agora Video Call in VanillaJs",
-  "version": "2.2.0"
+  "description": "Customized Agora Video Call in VanillaJs",
+  "version": "2.3.0"
 }

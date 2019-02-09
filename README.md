@@ -125,35 +125,7 @@ The index page serves as the landing and login page for the sample application.
 
 The main section of this page is within a `<section>` element whose class is `login-wrapper`.
 
-Create the page footer:
-
-- Add text, `Powered By Agora`, that links to the [Agora website](https://www.agora.io).
-- Add a reference to Agora's [sales support email](mailto:sales@agora.io).
-
-``` HTML
-  <div class="wrapper" id="page-index">
-    <div class="ag-header"></div>
-
-    <div class="ag-main">
-
-      <section class="login-wrapper">
-
-			...
-		
-      </section>
-    </div>     
-
-    <div class="ag-footer">
-      <a class="ag-href" target="_blank" href="https://www.agora.io">
-        <span>Powered By Agora</span>
-      </a>
-      <div>
-        <span>Interested in Agora video call SDK? Contact </span>
-        <span class="ag-contact">sales@agora.io</span>
-      </div>
-    </div>
-  </div>
-```
+Create the page footer
 
 #### Create the Login Header and Footer
 
@@ -945,36 +917,7 @@ Create the page header by adding a reference to the Agora Logo, `../../assets/im
 - Add the text `Powered By Agora` linking to the [Agora website](https://www.agora.io).
 - Add a reference to Agora's support phone number `400 632 6626`.
 
-Include the Agora SDK file from the source `https://cdn.agora.io/sdk/web/AgoraRTCSDK-2.3.1.js`.
-
-``` HTML
-  <div class="wrapper" id="page-precall">
-    <div class="ag-header">
-      <div class="ag-header-lead">
-        <img class="ag-header-logo" src="../../assets/images/ag-logo.png" alt="">
-        <span>AgoraWeb v2.2</span>
-      </div>
-    </div>
-    <div class="ag-main">
-      <div class="columns ag-container">
-      
-	      ...
-
-      </div>
-    </div>
-    <div class="ag-footer">
-      <a class="ag-href" target="_blank" href="https://www.agora.io">
-        <span>Powered By Agora</span>
-      </a>
-      <span>Talk to Support: 400 632 6626</span>
-    </div>
-
-    <!-- modal/messages/notifications -->
-
-  </div>
-  <script src="https://cdn.agora.io/sdk/web/AgoraRTCSDK-2.3.1.js"></script>
-  <!-- inject -->
-```
+Include the Agora SDK file from the source `https://cdn.agora.io/sdk/web/AgoraRTCSDK-2.5.0.js`.
 
 #### Create the Room Details Column
 
