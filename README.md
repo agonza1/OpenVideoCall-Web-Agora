@@ -49,9 +49,7 @@ export const APP_ID = <#YOUR APP ID#>;
 	npm run build
 	```
 	
-3. Your default browser should open and display the sample application, as shown here.
-
-	![index.jpg](images/index.jpg)
+3. Your default browser should open and display the sample application.
 
 	**Note:** In some cases, you may need to open a browser and enter `http://localhost:8080` as the URL.
 
@@ -112,8 +110,6 @@ Asset|Description
 The index page UI is contained in the [`src/pages/index/index.html`](src/pages/index/index.html) file.
 
 The index page serves as the landing and login page for the sample application.
-
-![index.jpg](images/index.jpg)
 
 - [Create the Page Architecture](#create-the-page-architecture)
 - [Create the Login Header and Footer](#create-the-login-header-and-footer)
@@ -891,8 +887,6 @@ subscribeMouseEvent();
 The pre-call login page UI is contained in the [`src/pages/precall/precall.html`](src/pages/precall/precall.html) file.
 
 Logging in displays a pre-call page where the user can test their audio and video before joining the call.
-
-![precall.jpg](images/precall.jpg)
 
 - [Create the Page Architecture](#create-the-page-architecture)
 - [Create the Room Details Column](#create-the-room-details-column)
@@ -2008,8 +2002,6 @@ uiInit().then(() => {
 The meeting page UI is contained in the [`src/pages/meeting/meeting.html`](src/pages/meeting/meeting.html) file.
 
 The user enters the meeting page after logging in from the pre-call login page. This page serves as the audio/video call page for the sample application.
-
-![meeting.jpg](images/meeting.jpg)
 
 
 #### Create the Page Architecture

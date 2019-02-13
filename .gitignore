@@ -1,12 +1,12 @@
 .DS_Store
 node_modules/
 dist/
+src/utils/Settings.js
 npm-debug.log
 yarn-error.log
 
 # Editor directories and files
 .idea
-src/pages/utils/Settings.js
 *.suo
 *.ntvs*
 *.njsproj

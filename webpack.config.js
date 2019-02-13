@@ -51,6 +51,14 @@ module.exports = {
           limit: 10000,
           name: 'assets/fonts/[name].[hash:7].[ext]'
         }
+      },
+      {
+        test: /\.(json|pb)(\?.*)?$/,
+        loader: 'url-loader',
+        options: {
+          limit: 1000000,
+          name: 'assets/tensorflow/[name].[hash:7].[ext]'
+        }
       }
     ])
   },
@@ -58,7 +66,7 @@ module.exports = {
     alias: {
       '@': path.join(__dirname, './src')
     },
-    extensions: ['*', '.js', '.json']
+    extensions: ['*', '.js', '.json', '.pb']
   },
   devServer: {
     historyApiFallback: true,
