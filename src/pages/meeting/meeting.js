@@ -25,6 +25,8 @@ let shareClient = null;
 let shareStream = null;
 let mainId;
 let mainStream;
+let stopImageProcessing = false;
+let processedVideo = null;
 
 const globalLog = logger.init('global', 'blue');
 const shareLog = logger.init('share', 'yellow');
@@ -136,9 +138,67 @@ const streamInit = (uid, options, config) => {
       break;
   }
   // eslint-disable-next-line
-  let stream = AgoraRTC.createStream(merge(defaultConfig, config));
-  stream.setVideoProfile(options.videoProfile);
-  return stream;
+  // let stream = AgoraRTC.createStream(merge(defaultConfig, config));
+  // stream.setVideoProfile(options.videoProfile);
+  // NEW
+  // navigator.mediaDevices
+  //   .getUserMedia({ video: true, audio: true })
+  //   .then(function(mediaStream) {
+  //     var videoSource = mediaStream.getVideoTracks()[0];
+  //     var audioSource = mediaStream.getAudioTracks()[0];
+  //     var stream = AgoraRTC.createStream({
+  //       videoSource: videoSource,
+  //       audioSource: audioSource
+  //     });
+  //     return stream;
+  //     // processVideo(uid, videoSource).then(function(processedMediaStream) {
+  //     //   // After processing videoSource and audioSource
+  //     //   var stream = AgoraRTC.createStream({
+  //     //     videoSource: processedMediaStream.getVideoTracks()[0],
+  //     //     audioSource: audioSource
+  //     //   });
+  //     //   return stream;
+  //     // });
+  //   });
+  // ProcessVideo(uid, stream, function(newStream) {
+  //   return newStream;
+  // });
+  // End new
+  // NEW 2
+  let canvas = document.getElementById('canvas');
+  return processVideo(canvas).then(function() {
+    const stream = canvas.captureStream();
+    var videoSource = stream.getVideoTracks()[0];
+    var audioSource = stream.getAudioTracks()[0];
+    // After processing videoSource and audioSource
+    let s = AgoraRTC.createStream({
+      streamID: uid,
+      audio: false,
+      video: true,
+      screen: false,
+      videoSource: videoSource,
+      audioSource: audioSource
+    });
+    return new Promise(function(resolve) {
+      resolve(s);
+    });
+    // Return processVideo(uid, videoSource).then(function(processedMediaStream) {
+    //   let s = AgoraRTC.createStream({
+    //     streamID: uid,
+    //     audio: true,
+    //     video: true,
+    //     screen: false,
+    //     videoSource: processedMediaStream.getVideoTracks()[0],
+    //     audioSource: audioSource
+    //   });
+    //
+    //   return new Promise(function(resolve) {
+    //     resolve(s);
+    //   });
+    // });
+  });
+  // Console.log(stream);
+  // return stream;
 };
 
 const shareEnd = () => {
@@ -246,6 +306,9 @@ const addStream = (stream, push = false) => {
   if (redundant) {
     return;
   }
+  // TODO
+  // Do stream processing
+  // processVideo(id, stream);
   // Do push for localStream and unshift for other streams
   push ? streamList.push(stream) : streamList.unshift(stream);
   if (streamList.length > 4) {
@@ -318,7 +381,7 @@ const subscribeStreamEvents = () => {
     if (id !== mainId) {
       if (options.displayMode === 2) {
         client.setRemoteVideoStreamType(stream, 1);
-      } else {  
+      } else {
         mainStream && client.setRemoteVideoStreamType(mainStream, 1);
         mainStream = stream;
         mainId = id;
@@ -342,7 +405,7 @@ const subscribeStreamEvents = () => {
       shareEnd();
     }
     if (id === mainId) {
-      let next = options.displayMode === 2 ? SHARE_ID : localStream.getId();
+      let next = options.displayMode === 2 ? SHARE_ID : window.localStream.getId();
       setHighStream(mainId, next);
       mainId = next;
       mainStream = getStreamById(mainId);
@@ -372,7 +435,7 @@ const subscribeStreamEvents = () => {
       shareEnd();
     }
     if (id === mainId) {
-      let next = options.displayMode === 2 ? SHARE_ID : localStream.getId();
+      let next = options.displayMode === 2 ? SHARE_ID : window.localStream.getId();
       setHighStream(mainId, next);
       mainId = next;
       mainStream = getStreamById(mainId);
@@ -402,8 +465,8 @@ const subscribeMouseEvents = () => {
   $('.exitBtn').on('click', function() {
     try {
       shareClient && shareEnd();
-      client && client.unpublish(localStream);
-      localStream && localStream.close();
+      client && client.unpublish(window.localStream);
+      window.localStream && window.localStream.close();
       client &&
         client.leave(
           () => {
@@ -446,7 +509,7 @@ const subscribeMouseEvents = () => {
     }
     $('.disableRemoteBtn').toggleClass('off');
     let list;
-    let id = localStream.getId();
+    let id = window.localStream.getId();
     list = Array.from(document.querySelectorAll(`.video-item:not(#video-item-${id})`));
     list.map(item => {
       if (item.style.display === 'none') {
@@ -495,6 +558,15 @@ const subscribeMouseEvents = () => {
     global._toolbarToggle = setTimeout(function() {
       $('.ag-btn-group').removeClass('active');
     }, 2500);
+  });
+
+  $('.hideBackgroundBtn').on('click', function(e) {
+    console.log('start/stop processing image to hide background');
+    if (!stopImageProcessing) {
+      stopImageProcessing = true;
+    } else {
+      stopImageProcessing = false;
+    }
   });
 };
 
@@ -556,30 +628,90 @@ clientInit(client, options).then(uid => {
         cameraId: options.cameraId,
         microphoneId: options.microphoneId
       };
-  localStream = streamInit(uid, options, config);
-
-  // Enable dual stream
-  if (options.attendeeMode !== 'audience') { 
+  streamInit(uid, options, config).then(localStream => {
+    window.localStream = localStream;
+    // Enable dual stream
+    if (options.attendeeMode !== 'audience') {
       // MainId default to be localStream's ID
       mainId = uid;
       mainStream = localStream;
-  }
-  enableDualStream();
-  localStream.init(
-    () => {
-      if (options.attendeeMode !== 'audience') {
-        addStream(localStream, true);
-        client.publish(localStream, err => {
-          localLog('Publish local stream error: ' + err);
-        });
-      }
-    },
-    err => {
-      localLog('getUserMedia failed', err);
     }
-  );
+    enableDualStream();
+    localStream.init(
+      () => {
+        if (options.attendeeMode !== 'audience') {
+          addStream(localStream, true);
+          client.publish(localStream, err => {
+            localLog('Publish local stream error: ' + err);
+          });
+        }
+      },
+      err => {
+        localLog('getUserMedia failed', err);
+      }
+    );
+  });
 });
 
 if (DUAL_STREAM_DEBUG) {
   setInterval(infoDetectSchedule, 1000);
+}
+
+function processVideo(canvas) {
+  const MODEL_URL =
+    'src/utils/tensorflow/deeplabv3_mnv2_pascal_train_aug_web_model/tensorflowjs_model.pb';
+  const WEIGHTS_URL =
+    'src/utils/tensorflow/deeplabv3_mnv2_pascal_train_aug_web_model/weights_manifest.json';
+  // Model's input and output have width and height of 513.
+  const TENSOR_EDGE = 513;
+  let stopImageProcessing = false;
+  // Const model = return new Promise(tf.loadFrozenModel(MODEL_URL, WEIGHTS_URL));
+  const model = new Promise(function(resolve) {
+    resolve(tf.loadFrozenModel(MODEL_URL, WEIGHTS_URL));
+  });
+  return navigator.mediaDevices
+    .getUserMedia({
+      video: { facingMode: 'user', frameRate: 5, width: 640, height: 480 }
+    })
+    .then(function(stream) {
+      return model.then(function(model) {
+        const video = document.createElement('video');
+        // Video.setAttribute('id', 'video' + videoElementId);
+        // let video = document.getElementById('video-item-' + videoElementId);
+        video.width = video.height = TENSOR_EDGE;
+        video.autoplay = true;
+        // Video.width = video.height = TENSOR_EDGE;
+        const ctx = canvas.getContext('2d');
+        const videoCopy = ctx.canvas.cloneNode(false).getContext('2d');
+        const maskContext = document.createElement('canvas').getContext('2d');
+        maskContext.canvas.width = maskContext.canvas.height = TENSOR_EDGE;
+        const img = maskContext.createImageData(TENSOR_EDGE, TENSOR_EDGE);
+        let imgd = img.data;
+        new Uint32Array(imgd.buffer).fill(0x00ffffff);
+
+        const render = () => {
+          videoCopy.drawImage(video, 0, 0, ctx.canvas.width, ctx.canvas.height);
+          const out = tf.tidy(() => {
+            return model.execute({ ImageTensor: tf.fromPixels(video).expandDims(0) });
+          });
+          const data = out.dataSync();
+          for (let i = 0; i < data.length; i++) {
+            imgd[i * 4 + 3] = data[i] == 15 ? 0 : 255;
+          }
+          maskContext.putImageData(img, 0, 0);
+          ctx.drawImage(videoCopy.canvas, 0, 0);
+          // Cover background, put over video a mask: maskContext
+          ctx.drawImage(maskContext.canvas, 0, 0, ctx.canvas.width, ctx.canvas.height);
+          window.requestAnimationFrame(render);
+        };
+        // Once video is ready to play, render
+        video.oncanplay = render;
+        // Pass stream to video src
+        video.srcObject = stream;
+        canvas.hidden = true;
+        return new Promise(function(resolve) {
+          resolve();
+        });
+      });
+    });
 }

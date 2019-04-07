@@ -23,7 +23,7 @@
     </div>
     <div class="ag-main">
       <div class="ag-container" id="ag-canvas">
-
+        <canvas id="canvas" width=640px height=480px></canvas>
         <!-- btn group -->
         <div class="ag-btn-group">
           <span class="ag-btn exitBtn" title="Exit">
@@ -42,6 +42,9 @@
           </span>
           <span class="ag-btn displayModeBtn" title="Switch Display Mode">
             <i class="ag-icon icon-switch-layout"></i>
+          </span>
+          <span class="ag-btn hideBackgroundBtn" title="Hide my background">
+            <i class="ag-icon icon-ctrl"></i>
           </span>
           <!-- <span class="ag-btn ctrlBtn" title="Control">
             <i class="ag-icon icon-ctrl"></i>
@@ -64,6 +67,7 @@
 
     <!-- modal/messages/notifications -->
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.14.2/dist/tf.min.js"></script>
   <script src="https://cdn.agora.io/sdk/web/AgoraRTCSDK-2.5.0.js"></script>
   <!-- inject -->
 </body>

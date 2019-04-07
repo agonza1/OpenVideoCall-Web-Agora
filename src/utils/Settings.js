@@ -7,4 +7,4 @@ export const RESOLUTION_ARR = {
 
 export const SHARE_ID = 1;
 
-export const APP_ID = <#YOUR APP ID#>;
+export const APP_ID = 'fb9e7fb2b50a4c64b2ad9d07246d9733';

@@ -90,6 +90,7 @@ exports.getEntry = function() {
   for (let item of routesArray) {
     result[item] = `@/pages/${item}/${item}.js`;
   }
+  result.meeting = ['babel-polyfill', '@/pages/meeting/meeting.js'];
   result.test = ['babel-polyfill', '@/pages/test/test.js'];
   return result;
 };
