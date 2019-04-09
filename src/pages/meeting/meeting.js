@@ -25,8 +25,7 @@ let shareClient = null;
 let shareStream = null;
 let mainId;
 let mainStream;
-let stopImageProcessing = false;
-let processedVideo = null;
+let removeBackground = true;
 
 const globalLog = logger.init('global', 'blue');
 const shareLog = logger.init('share', 'yellow');
@@ -138,67 +137,33 @@ const streamInit = (uid, options, config) => {
       break;
   }
   // eslint-disable-next-line
-  // let stream = AgoraRTC.createStream(merge(defaultConfig, config));
-  // stream.setVideoProfile(options.videoProfile);
-  // NEW
-  // navigator.mediaDevices
-  //   .getUserMedia({ video: true, audio: true })
-  //   .then(function(mediaStream) {
-  //     var videoSource = mediaStream.getVideoTracks()[0];
-  //     var audioSource = mediaStream.getAudioTracks()[0];
-  //     var stream = AgoraRTC.createStream({
-  //       videoSource: videoSource,
-  //       audioSource: audioSource
-  //     });
-  //     return stream;
-  //     // processVideo(uid, videoSource).then(function(processedMediaStream) {
-  //     //   // After processing videoSource and audioSource
-  //     //   var stream = AgoraRTC.createStream({
-  //     //     videoSource: processedMediaStream.getVideoTracks()[0],
-  //     //     audioSource: audioSource
-  //     //   });
-  //     //   return stream;
-  //     // });
-  //   });
-  // ProcessVideo(uid, stream, function(newStream) {
-  //   return newStream;
-  // });
-  // End new
-  // NEW 2
-  let canvas = document.getElementById('canvas');
-  return processVideo(canvas).then(function() {
-    const stream = canvas.captureStream();
-    var videoSource = stream.getVideoTracks()[0];
-    var audioSource = stream.getAudioTracks()[0];
-    // After processing videoSource and audioSource
-    let s = AgoraRTC.createStream({
-      streamID: uid,
-      audio: false,
-      video: true,
-      screen: false,
-      videoSource: videoSource,
-      audioSource: audioSource
+  let stream;
+  if (removeBackground) {
+    let canvas = document.getElementById('canvas');
+    return getAndProcessVideo(canvas).then(function() {
+      stream = canvas.captureStream();
+      var videoSource = stream.getVideoTracks()[0];
+      var audioSource = stream.getAudioTracks()[0];
+      // After processing videoSource and audioSource
+      let s = AgoraRTC.createStream({
+        streamID: uid,
+        audio: true,
+        video: true,
+        screen: false,
+        videoSource: videoSource,
+        audioSource: audioSource
+      });
+      return new Promise(function(resolve) {
+        resolve(s);
+      });
     });
+  } else {
+    stream = AgoraRTC.createStream(merge(defaultConfig, config));
+    stream.setVideoProfile(options.videoProfile);
     return new Promise(function(resolve) {
-      resolve(s);
+      resolve(stream);
     });
-    // Return processVideo(uid, videoSource).then(function(processedMediaStream) {
-    //   let s = AgoraRTC.createStream({
-    //     streamID: uid,
-    //     audio: true,
-    //     video: true,
-    //     screen: false,
-    //     videoSource: processedMediaStream.getVideoTracks()[0],
-    //     audioSource: audioSource
-    //   });
-    //
-    //   return new Promise(function(resolve) {
-    //     resolve(s);
-    //   });
-    // });
-  });
-  // Console.log(stream);
-  // return stream;
+  }
 };
 
 const shareEnd = () => {
@@ -306,9 +271,6 @@ const addStream = (stream, push = false) => {
   if (redundant) {
     return;
   }
-  // TODO
-  // Do stream processing
-  // processVideo(id, stream);
   // Do push for localStream and unshift for other streams
   push ? streamList.push(stream) : streamList.unshift(stream);
   if (streamList.length > 4) {
@@ -561,11 +523,11 @@ const subscribeMouseEvents = () => {
   });
 
   $('.hideBackgroundBtn').on('click', function(e) {
-    console.log('start/stop processing image to hide background');
-    if (!stopImageProcessing) {
-      stopImageProcessing = true;
+    console.log('start/stop processing image to hide background. Not working yet...');
+    if (!removeBackground) {
+      removeBackground = true;
     } else {
-      stopImageProcessing = false;
+      removeBackground = false;
     }
   });
 };
@@ -657,14 +619,13 @@ if (DUAL_STREAM_DEBUG) {
   setInterval(infoDetectSchedule, 1000);
 }
 
-function processVideo(canvas) {
+function getAndProcessVideo(canvas) {
   const MODEL_URL =
     'src/utils/tensorflow/deeplabv3_mnv2_pascal_train_aug_web_model/tensorflowjs_model.pb';
   const WEIGHTS_URL =
     'src/utils/tensorflow/deeplabv3_mnv2_pascal_train_aug_web_model/weights_manifest.json';
   // Model's input and output have width and height of 513.
   const TENSOR_EDGE = 513;
-  let stopImageProcessing = false;
   // Const model = return new Promise(tf.loadFrozenModel(MODEL_URL, WEIGHTS_URL));
   const model = new Promise(function(resolve) {
     resolve(tf.loadFrozenModel(MODEL_URL, WEIGHTS_URL));
