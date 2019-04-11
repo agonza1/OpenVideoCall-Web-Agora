@@ -1,3 +1,4 @@
+// TODO
 const stream = Navigator.mediaDevices.getUserMedia({
   video: { facingMode: 'user', frameRate: 10, width: 640, height: 480 }
 });

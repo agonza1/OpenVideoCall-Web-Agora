@@ -140,7 +140,7 @@ const streamInit = (uid, options, config) => {
   let stream;
   if (removeBackground) {
     let canvas = document.getElementById('canvas');
-    return getAndProcessVideo(canvas).then(function() {
+    return getAndProcessVideo(canvas).then(function(originalStream) {
       stream = canvas.captureStream();
       var videoSource = stream.getVideoTracks()[0];
       var audioSource = stream.getAudioTracks()[0];
@@ -157,13 +157,12 @@ const streamInit = (uid, options, config) => {
         resolve(s);
       });
     });
-  } else {
-    stream = AgoraRTC.createStream(merge(defaultConfig, config));
-    stream.setVideoProfile(options.videoProfile);
-    return new Promise(function(resolve) {
-      resolve(stream);
-    });
   }
+  stream = AgoraRTC.createStream(merge(defaultConfig, config));
+  stream.setVideoProfile(options.videoProfile);
+  return new Promise(function(resolve) {
+    resolve(stream);
+  });
 };
 
 const shareEnd = () => {
@@ -632,16 +631,15 @@ function getAndProcessVideo(canvas) {
   });
   return navigator.mediaDevices
     .getUserMedia({
-      video: { facingMode: 'user', frameRate: 5, width: 640, height: 480 }
+      audio: false,
+      video: { facingMode: 'user', frameRate: 10, width: 640, height: 480 }
     })
     .then(function(stream) {
       return model.then(function(model) {
         const video = document.createElement('video');
-        // Video.setAttribute('id', 'video' + videoElementId);
-        // let video = document.getElementById('video-item-' + videoElementId);
         video.width = video.height = TENSOR_EDGE;
         video.autoplay = true;
-        // Video.width = video.height = TENSOR_EDGE;
+        // video.width = video.height = TENSOR_EDGE;
         const ctx = canvas.getContext('2d');
         const videoCopy = ctx.canvas.cloneNode(false).getContext('2d');
         const maskContext = document.createElement('canvas').getContext('2d');
@@ -651,10 +649,14 @@ function getAndProcessVideo(canvas) {
         new Uint32Array(imgd.buffer).fill(0x00ffffff);
 
         const render = () => {
+          // VideoCopy is the canvas name where we are placing the video
           videoCopy.drawImage(video, 0, 0, ctx.canvas.width, ctx.canvas.height);
           const out = tf.tidy(() => {
             return model.execute({ ImageTensor: tf.fromPixels(video).expandDims(0) });
           });
+          // Data will be multidimensional array of numbers that has the detected object shape and data type.
+          // Then we will for loop all the pixels and make the mask transparent or opaque based on if it is
+          // a segmented object or not(background)
           const data = out.dataSync();
           for (let i = 0; i < data.length; i++) {
             imgd[i * 4 + 3] = data[i] == 15 ? 0 : 255;
@@ -671,7 +673,7 @@ function getAndProcessVideo(canvas) {
         video.srcObject = stream;
         canvas.hidden = true;
         return new Promise(function(resolve) {
-          resolve();
+          resolve(stream);
         });
       });
     });

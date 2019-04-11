@@ -24,7 +24,8 @@ function onLoad() {
   });
   return navigator.mediaDevices
     .getUserMedia({
-      video: { facingMode: 'user', frameRate: 1, width: 640, height: 480 }
+      audio: false,
+      video: { facingMode: 'user', frameRate: 5, width: 640, height: 480 }
     })
     .then(function(stream) {
       return model.then(function(model) {
@@ -40,16 +41,19 @@ function onLoad() {
         new Uint32Array(imgd.buffer).fill(0x00ffffff);
 
         const render = () => {
+          // VideoCopy is the canvas name where we are placing the video
           videoCopy.drawImage(video, 0, 0, ctx.canvas.width, ctx.canvas.height);
           const out = tf.tidy(() => {
             return model.execute({ ImageTensor: tf.fromPixels(video).expandDims(0) });
           });
+          // Data will be multidimensional array of numbers that has the detected object shape and data type.
           const data = out.dataSync();
+          // Then we will for loop all the pixels and make the mask transparent or opaque based on if it is a segmented object or not(background)
           for (let i = 0; i < data.length; i++) {
             imgd[i * 4 + 3] = data[i] == 15 ? 0 : 255;
           }
-          maskContext.putImageData(img, 0, 0);
           ctx.drawImage(videoCopy.canvas, 0, 0);
+          maskContext.putImageData(img, 0, 0);
           // Cover background, put over video a mask: maskContext
           if (document.getElementById('show-background-toggle').checked)
             ctx.drawImage(maskContext.canvas, 0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -96,14 +100,9 @@ function call(stream) {
   pc2.oniceconnectionstatechange = e => onIceStateChange(pc2, e);
   pc2.ontrack = gotRemoteStream;
 
-  stream.getTracks().forEach(
-    track => {
-      pc1.addTrack(
-        track,
-        stream
-      );
-    }
-  );
+  stream.getTracks().forEach(track => {
+    pc1.addTrack(track, stream);
+  });
   console.log('Added local stream to pc1');
 
   console.log('pc1 createOffer start');
@@ -117,9 +116,17 @@ function onCreateSessionDescriptionError(error) {
 function onCreateOfferSuccess(desc) {
   console.log(`Offer from pc1\n${desc.sdp}`);
   console.log('pc1 setLocalDescription start');
-  pc1.setLocalDescription(desc, () => onSetLocalSuccess(pc1), onSetSessionDescriptionError);
+  pc1.setLocalDescription(
+    desc,
+    () => onSetLocalSuccess(pc1),
+    onSetSessionDescriptionError
+  );
   console.log('pc2 setRemoteDescription start');
-  pc2.setRemoteDescription(desc, () => onSetRemoteSuccess(pc2), onSetSessionDescriptionError);
+  pc2.setRemoteDescription(
+    desc,
+    () => onSetRemoteSuccess(pc2),
+    onSetSessionDescriptionError
+  );
   console.log('pc2 createAnswer start');
   // Since the 'remote' side has no media stream we need
   // to pass in the right constraints in order for it to
@@ -149,18 +156,28 @@ function gotRemoteStream(e) {
 function onCreateAnswerSuccess(desc) {
   console.log(`Answer from pc2:\n${desc.sdp}`);
   console.log('pc2 setLocalDescription start');
-  pc2.setLocalDescription(desc, () => onSetLocalSuccess(pc2), onSetSessionDescriptionError);
+  pc2.setLocalDescription(
+    desc,
+    () => onSetLocalSuccess(pc2),
+    onSetSessionDescriptionError
+  );
   console.log('pc1 setRemoteDescription start');
-  pc1.setRemoteDescription(desc, () => onSetRemoteSuccess(pc1), onSetSessionDescriptionError);
+  pc1.setRemoteDescription(
+    desc,
+    () => onSetRemoteSuccess(pc1),
+    onSetSessionDescriptionError
+  );
 }
 
 function onIceCandidate(pc, event) {
-  getOtherPc(pc).addIceCandidate(event.candidate)
-    .then(
-      () => onAddIceCandidateSuccess(pc),
-      err => onAddIceCandidateError(pc, err)
-    );
-  console.log(`${getName(pc)} ICE candidate: ${event.candidate ? event.candidate.candidate : '(null)'}`);
+  getOtherPc(pc)
+    .addIceCandidate(event.candidate)
+    .then(() => onAddIceCandidateSuccess(pc), err => onAddIceCandidateError(pc, err));
+  console.log(
+    `${getName(pc)} ICE candidate: ${
+      event.candidate ? event.candidate.candidate : '(null)'
+    }`
+  );
 }
 
 function onAddIceCandidateSuccess(pc) {
@@ -179,11 +196,11 @@ function onIceStateChange(pc, event) {
 }
 
 function getName(pc) {
-  return (pc === pc1) ? 'pc1' : 'pc2';
+  return pc === pc1 ? 'pc1' : 'pc2';
 }
 
 function getOtherPc(pc) {
-  return (pc === pc1) ? pc2 : pc1;
+  return pc === pc1 ? pc2 : pc1;
 }
 
 // MAIN
